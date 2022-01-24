@@ -39,18 +39,26 @@ public class TicTacToeServer extends Application {
             public void handle(ActionEvent event) {
 //*******FOR TESTING DB FUNCTIONS**************************************************
                 Player p1 = new Player("khouly", "12345",'m');
-                Player p2 = new Player("Adel", "srftf", 'm');
-                //Game g = new Game(4,7 ,'x','o','x','o','x','x','o','x','x');
+                //Player p2 = new Player("Adel", "srftf", 'm');
+                Player p2 = Database.isPlayer("Adel", "srftf");
+                Game g = new Game(4,7 ,'x','o','x','o','x','x','o','x','x');
 //                boolean isConnected = db.startConnection();
 //                System.out.println(isConnected);
                 
 //                boolean isAdded = Database.addPlayer(p2);
 //                System.out.println(isAdded);
-                boolean isExist = Database.isPlayer(p2.getUsername(), p2.getPassword());
-                System.out.println(isExist);
-                if(!isExist){
-                    Database.addPlayer(p2);
+                //boolean isExist = Database.isPlayer(p2.getUsername(), p2.getPassword());
+                if(p2 != null){
+                    p2.setScore(100);
+                    Database.editPlayer(p2);
                 }
+//                System.out.println(isExist);
+//                if(!isExist){
+//                    Database.addPlayer(p2);
+//                }else{
+//                    p2.setScore(100);
+//                    Database.editPlayer(p2);
+//                }
 //                boolean isGAdded = Database.addGame(g);
 //                System.out.println(isGAdded);
                 Game g1 = Database.getGame(7, 4);
@@ -62,6 +70,7 @@ public class TicTacToeServer extends Application {
                         System.err.println("Player 1 : O");
                     }
                 }else{
+                    Database.addGame(g);
                     System.err.println("g1 doesn't exsit");
                 }
 //***********************************************************************************

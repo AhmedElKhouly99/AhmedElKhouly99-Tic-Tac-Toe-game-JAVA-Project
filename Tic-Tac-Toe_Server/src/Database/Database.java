@@ -24,9 +24,12 @@ public class Database {
     
     final static String CONSTR = "jdbc:mysql://:3306/xogame?useSSL=true";
     final static String INSERTPLAYER = "insert into player (username,password,gender,score) values(?,?,?,?)";
-    final static String SEARCHPLAYER = "select * from player where username=? and password=?";
+    //final static String SEARCHPLAYER = "select * from player where username=? and password=?";
     final static String INSERTGAME = "insert into game values(?,?,?,?,?,?,?,?,?,?,?)";
     final static String SEARCHGAME = "select * from game where (player1_idx=? and player2_ido=?) OR (player1_idx=? and player2_ido=?)";
+    final static String EDITSCORE = "update player set score=? where player_id=?";
+    final static String GETPALYER = "select * from player where username=? and password=?";
+    final static String DELETEGAME = "delete from game where player1_idx=? and player2_ido=?";
     static Connection con;
     static Statement stm;
     static PreparedStatement preparedStmt;
@@ -70,25 +73,27 @@ public class Database {
     }
     
     @SuppressWarnings("empty-statement")
-    public static boolean isPlayer(String uname, String pass){
-        boolean isExist = false;
+    public static Player isPlayer(String uname, String pass){
+        Player p;
         try {
             while(!startConnection());
-            preparedStmt = con.prepareStatement(SEARCHPLAYER);
+            preparedStmt = con.prepareStatement(GETPALYER);
             preparedStmt.setString (1, uname);
             preparedStmt.setString (2, pass);
             rs = preparedStmt.executeQuery();
             if(rs.next() && rs.getString(1).equals(uname) && rs.getString(2).equals(pass)){
-                isExist = true;
+                p = new Player(rs.getInt(5), rs.getString(1), rs.getString(2), rs.getString(3).charAt(0), rs.getInt(4));
+            }else{
+                p = null;
             }
             rs.close();
             preparedStmt.close();
             con.close();
-            return isExist;     
+            return p;
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return false;
+        return null;
     }
     
     @SuppressWarnings("empty-statement")
@@ -129,16 +134,37 @@ public class Database {
             rs = preparedStmt.executeQuery();
             if(rs.next() && (rs.getInt(1) == player1_id || rs.getInt(1) == player2_id)){
                 Game g = new Game(rs.getInt(1), rs.getInt(2), rs.getString(3).charAt(0),rs.getString(4).charAt(0), rs.getString(5).charAt(0), rs.getString(6).charAt(0), rs.getString(7).charAt(0), rs.getString(8).charAt(0), rs.getString(9).charAt(0), rs.getString(10).charAt(0), rs.getString(11).charAt(0));
+                preparedStmt = con.prepareStatement(DELETEGAME);
+                preparedStmt.setInt(1, g.getPlayer1_id());
+                preparedStmt.setInt(2, g.getPlayer2_id());
+                preparedStmt.execute();
                 rs.close();
                 preparedStmt.close();
                 con.close();
                 return g;
             }
-            return null;
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
+    }
+    
+    @SuppressWarnings("empty-statement")
+    public static boolean editPlayer(Player p){
+         try {
+            while(!startConnection());
+            preparedStmt = con.prepareStatement(EDITSCORE);
+            preparedStmt.setInt(1, p.getScore());
+            preparedStmt.setInt(2, p.getId());
+             System.err.println("Done");
+            preparedStmt.execute();
+            preparedStmt.close();
+            con.close();
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return false;
     }
     
 }

@@ -5,24 +5,40 @@
  */
 package player;
 
+import game.Game;
+
 /**
  *
  * @author ahmed
  */
 public class Player {
+
+    public Player(int id, String username, String password, char gender, int score) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.gender = gender;
+        this.score = score;
+        this.status = 1;
+    }
     
     int id;
     String username;
     String password;
     char gender;
     char x_o;
-    int score;
+    int score = 0;
+    boolean turn;
+    int stage;
+    int status;
+    Game []gs;
     
     public Player(String username, String password, char gender) {
         //this.id = id;
         this.username = username;
         this.password = password;
         this.gender = gender;
+        this.stage = 0;
 //        this.x_o = x_o;
 //        this.score = score;
     }
