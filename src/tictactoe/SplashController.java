@@ -5,14 +5,21 @@
  */
 package tictactoe;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.animation.RotateTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
@@ -36,14 +43,18 @@ public class SplashController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // TODO
-    }    
-
-    @FXML
-    private void play(ActionEvent event) {
         setRotate(cir1, true, 360, 10);
         setRotate(cir2, true, 180, 18);
         setRotate(cir3, true, 145, 24);
+    }    
+    int rotate = 0;
+    @FXML
+    private void play(ActionEvent event) {
+        try {
+            MyStartBtn();
+        } catch (IOException ex) {
+            Logger.getLogger(SplashController.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }
     private void setRotate(Circle c, boolean reverse, int angle, int duration){
@@ -54,5 +65,10 @@ public class SplashController implements Initializable {
         rt.setRate(3);
         rt.setCycleCount(10);
         rt.play();
+    }
+    public void MyStartBtn() throws IOException {
+        Parent root = FXMLLoader.load(getClass().getResource("Login.fxml"));
+        Stage window = (Stage) StartBtn.getScene().getWindow();
+        window.setScene(new Scene(root));
     }
 }
