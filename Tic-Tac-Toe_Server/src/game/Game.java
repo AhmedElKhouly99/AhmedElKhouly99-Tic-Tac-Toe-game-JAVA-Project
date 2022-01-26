@@ -22,6 +22,7 @@ public class Game {
     char seven;
     char eight;
     char nine;
+    char turn;
 
     public int getPlayer1_id() {
         return player1_id;

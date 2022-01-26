@@ -26,9 +26,9 @@ public class Player {
     String username;
     String password;
     char gender;
-    char x_o;
+    //char x_o;
     int score = 0;
-    boolean turn;
+    //boolean turn;
     int stage;
     int status;
     Game []gs;
@@ -75,13 +75,13 @@ public class Player {
         this.gender = gender;
     }
 
-    public char getX_o() {
-        return x_o;
-    }
+//    public char getX_o() {
+//        return x_o;
+//    }
 
-    public void setX_o(char x_o) {
-        this.x_o = x_o;
-    }
+//    public void setX_o(char x_o) {
+//        this.x_o = x_o;
+//    }
 
     public int getScore() {
         return score;
