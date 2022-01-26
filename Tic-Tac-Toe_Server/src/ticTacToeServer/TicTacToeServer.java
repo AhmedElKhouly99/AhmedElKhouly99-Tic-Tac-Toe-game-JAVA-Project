@@ -3,95 +3,244 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ticTacToeServer;
+package tic.tac.toe_server;
 
-import Database.Database;
-import game.Game;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.layout.StackPane;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
-import player.Player;
+import static tic.tac.toe_server.ClientHandler.clientsVector;
 
 /**
  *
  * @author ahmed
  */
 public class TicTacToeServer extends Application {
+    
+    Label clientNum;
+    Label numField; // using Lable here as i could set the text of it and give it initial value(0) to show
+    Label clients;
+    FlowPane clientsField; // using FlowPane here not Label as i can't appent text on label
+     
+    Button refreshBtn;
+    Button closeBtn;
+    
+    FlowPane lapelPane;
+    FlowPane textFieldPane;
+    FlowPane buttonsPane;
+    BorderPane rootPane;
+     
+    Scene myScene;
+    
+    ServerSocket myServerSocket;
 
+    Vector<ClientHandler> clietnsVector;
+    
     @Override
-    public void init() throws Exception {
-         new Database(); //// Initiallizing database class
+    public void init()
+    {
+        /**********************************************************************/
+        /*************************** the server GUI ***************************/
+        clientNum = new Label("Client Num: ");
+        clientNum.setPrefWidth(100);
+        numField = new Label("0");
+        
+        clients = new Label("Online Clients: ");
+        clients.setPadding(new Insets(0, 0, 0,10));
+        clientsField = new FlowPane(Orientation.VERTICAL);
+        clientsField.setPadding(new Insets(0,0,0,10)); // to make it aligne the word "Online Clients"
+       
+        refreshBtn = new Button("Refresh");
+        closeBtn = new Button("Close");
+        
+        lapelPane = new FlowPane( clientNum, numField);
+        lapelPane.setVgap(20);
+        lapelPane.setPadding(new Insets(10, 0, 10, 10));
+        
+        buttonsPane = new FlowPane(refreshBtn, closeBtn);
+        buttonsPane.setHgap(223);
+        
+        rootPane = new BorderPane();
+        rootPane.setTop(lapelPane);
+        rootPane.setLeft(clients);
+        rootPane.setCenter(clientsField);
+        rootPane.setBottom(buttonsPane);
+
+        myScene = new Scene(rootPane, 350, 350);
+        
     }
-    
-    
     
     @Override
     public void start(Stage primaryStage) {
-        Button btn = new Button();
-        btn.setText("Say 'Hello World'");
-        btn.setOnAction(new EventHandler<ActionEvent>() {    
-            
+        
+        /* close button action */
+        closeBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-//*******FOR TESTING DB FUNCTIONS**************************************************
-                Player p1 = new Player("khouly", "12345",'m');
-                //Player p2 = new Player("Adel", "srftf", 'm');
-                Player p2 = Database.isPlayer("Adel", "srftf");
-                Game g = new Game(4,7 ,'x','o','x','o','x','x','o','x','x');
-//                boolean isConnected = db.startConnection();
-//                System.out.println(isConnected);
-                
-//                boolean isAdded = Database.addPlayer(p2);
-//                System.out.println(isAdded);
-                //boolean isExist = Database.isPlayer(p2.getUsername(), p2.getPassword());
-                if(p2 != null){
-                    p2.setScore(100);
-                    Database.editPlayer(p2);
+                try {
+                    actionAtServerAppClose();
+                } catch (IOException ex) {
+                    Logger.getLogger(TicTacToeServer.class.getName()).log(Level.SEVERE, null, ex);
                 }
-//                System.out.println(isExist);
-//                if(!isExist){
-//                    Database.addPlayer(p2);
-//                }else{
-//                    p2.setScore(100);
-//                    Database.editPlayer(p2);
-//                }
-//                boolean isGAdded = Database.addGame(g);
-//                System.out.println(isGAdded);
-                Game g1 = Database.getGame(7, 4);
-                if(g1 != null){
-                    System.err.println("g1 exists");
-                    if(g1.getPlayer1_id() == 7){
-                        System.err.println("Player 1 : X");
-                    }else{
-                        System.err.println("Player 1 : O");
-                    }
-                }else{
-                    Database.addGame(g);
-                    System.err.println("g1 doesn't exsit");
-                }
-//***********************************************************************************
             }
         });
         
-        StackPane root = new StackPane();
-        root.getChildren().add(btn);
-        
-        Scene scene = new Scene(root, 300, 250);
-        
-        primaryStage.setTitle("Hello World!");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
+//        refreshBtn.setOnAction(new EventHandler<ActionEvent>() {
+//            @Override
+//            public void handle(ActionEvent event) {
+//                        
+//            }
+//        });
 
+        /* show the app */
+        primaryStage.setTitle("TicTacToeServer!");
+        primaryStage.setScene(myScene);
+        primaryStage.show();
+             
+        /* add the recovery code here */
+        
+        
+        StartThreadToAcceptClients();
+        
+        startThreedToUpdateServerGui();
+    }
+    
+    /* Actions taken when the server app closed */
+    @Override
+    public void stop() throws IOException
+    {
+        actionAtServerAppClose();
+    }
+    
+    
+    /**************************************************************************/
+    /******************************* The main *********************************/
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        launch(args);
+        Application.launch(args);
+    }
+    
+    
+    
+    
+    /**************************************************************************/
+    /***************** thread for the server to accept clients ****************/
+    Thread acceptClientsThread;
+    private void StartThreadToAcceptClients()
+    {
+        Runnable runnable = new Runnable(){
+            @Override
+            public void run(){
+                
+                try{
+                    myServerSocket = new ServerSocket(5000);
+                    while(true){
+                        Socket internalSocket = myServerSocket.accept();
+                        
+                        new ClientHandler(internalSocket);
+                    }    
+                }catch(Exception e){
+                    System.out.println("TicTacToeServer.start<in the thread>()");
+                }   
+            }
+        };
+        
+        acceptClientsThread = new Thread(runnable);
+        acceptClientsThread.start();
+    }
+    
+    private void endThreadThatAcceptClients()
+    {
+        acceptClientsThread.stop();
+    }
+    
+    
+    /**************************************************************************/
+    /**************** thread to renew the data of server screen ***************/
+    int lastSize = 1;
+    Thread updateServerGuiThread;
+    private void startThreedToUpdateServerGui(){
+        Runnable task = new Runnable() {
+            public void run(){
+                runTask();
+            }
+        };
+        updateServerGuiThread = new Thread(task);
+        updateServerGuiThread.start();
+    }
+    
+    private void runTask(){     
+        while(true)
+        { 
+            try
+            {
+                /* get the online clients */
+                clietnsVector = ClientHandler.getClientsVector();
+                Platform.runLater( new Runnable(){
+                    public void run(){
+                        numField.setText(new Integer(clietnsVector.size()).toString());
+                        if(lastSize != clietnsVector.size())
+                        {
+                            lastSize = clietnsVector.size();
+                            clientsField.getChildren().removeAll(clientsField.getChildren());
+                            for(ClientHandler ch: clietnsVector){                          
+                                clientsField.getChildren().add(new Label(ch.getId()+"\n"));
+                          }
+                        }
+                    }
+                });
+                
+                updateServerGuiThread.sleep(50);
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    private void endThreadThatUpdateServerGui()
+    {
+        updateServerGuiThread.stop();
+    }
+    
+    /**************************************************************************/
+    /******************* action should take at close the server ***************/
+    private void actionAtServerAppClose() throws IOException
+    {
+        clietnsVector = ClientHandler.getClientsVector();
+        
+        /* end all internal sockets (threads that stands against) */
+        for(ClientHandler ch: clientsVector)
+        {
+            try {
+                ch.currentThread().wait();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(TicTacToeServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        /* close the thread resposible for accept clients */
+        endThreadThatAcceptClients();
+        /* close the socket of the server */
+        myServerSocket.close();
+        /* close the thread resposible for make changes on the GUI */
+        endThreadThatUpdateServerGui();
+        /* terminate the  JavaFX application explicitly */
+        Platform.exit();
     }
     
 }
