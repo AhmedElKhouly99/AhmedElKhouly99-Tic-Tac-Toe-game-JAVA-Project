@@ -67,7 +67,7 @@ public class SplashController implements Initializable {
         rt.play();
     }
     public void MyStartBtn() throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("Login.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("Main.fxml"));
         Stage window = (Stage) StartBtn.getScene().getWindow();
         window.setScene(new Scene(root));
     }
